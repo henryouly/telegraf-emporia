@@ -22,9 +22,16 @@ Built in `main.go:86-94`:
 ```
 GET https://api.emporiaenergy.com/AppAPI?apiMethod=getChartUsage
   &deviceGid={id}&channel=1%2C2%2C3
-  &start={RFC3339 UTC}&end={RFC3339 UTC}
+  &start={timestamp}&end={timestamp}
   &scale=1S&energyUnit=KilowattHours
 ```
+
+**Timestamp format (verified live 2026-09-08):** must be Go's
+`time.UTC().Format("2006-01-02T15:04:05Z07:00")`, which renders UTC times
+with a literal `Z` suffix, e.g. `2026-09-08T00:48:29Z`. Offsets without a
+colon such as `2026-09-08T00:48:05+0000` (Python `%z` output) are rejected
+with `400 {"message":"Text '...' could not be parsed, unparsed text found
+at index 19"}`. Prefer the `Z` form; `+00:00` is untested.
 Response mapped to (`main.go:65-68`):
 ```json
 { "firstUsageInstant": "2026-09-08T00:00:00Z", "usageList": [0.001, 0.002] }
