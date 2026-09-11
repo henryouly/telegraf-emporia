@@ -9,14 +9,14 @@
 | Purpose | Package | Version | Note |
 |---|---|---|---|
 | Cognito auth | `github.com/aws/aws-sdk-go/service/cognitoidentityprovider` | `v1.44.289` | via `clients/Cognito.go:1-46`, `USER_PASSWORD_AUTH` flow. Deprecated upstream — consider `aws-sdk-go-v2` on next refactor, no behavior change needed now. |
-| InfluxDB v1 write | `github.com/influxdata/influxdb1-client/v2` | `v0.0.0-20220302092344-a9ab5670611c` (indirect) | Keep — confirmed v1. Uses `NewHTTPClient` + `NewBatchPoints` (`main.go:168,194`). Promote to direct dependency. |
+| InfluxDB v2 write | `github.com/influxdata/influxdb-client-go/v2` | `v2.14.0` | `NewClient(url, token)` + `WriteAPIBlocking(org, bucket)` (`main.go`). |
 | JMESPath | `github.com/jmespath/go-jmespath` | `v0.4.0` | Transitive via aws-sdk-go. |
 
 No ORM, no web framework. Keep binary single-static for NAS/RPi deployment.
 
 ## 3. External services (confirmed)
 - **Source:** Emporia Energy cloud — `https://api.emporiaenergy.com/customers/devices` + `https://api.emporiaenergy.com/AppAPI?apiMethod=getChartUsage`. Auth: Cognito `us-east-2`, header `authtoken: <IdToken>` (`main.go:37`).
-- **Sink:** InfluxDB v1 at `http://192.168.30.3:8086`, database `pge`, auth `telegraf` user (`main.go:151-156`). Precision `s`, batch write per poll.
+- **Sink:** InfluxDB v2.8.0 at `http://192.168.30.20:8086`, org `2e7a164e7e93aac5`, bucket `energy`, token auth. Blocking write per poll, precision `s`.
 
 ## 4. Configuration (agreed: env vars + config file)
 No secrets in code. Precedence: `env > config.yaml > default`.
@@ -25,7 +25,7 @@ Proposed vars (names only — values never committed):
 ```
 EMPORIA_EMAIL, EMPORIA_PASSWORD
 COGNITO_REGION (default us-east-2), COGNITO_CLIENT_ID
-INFLUX_URL, INFLUX_USER, INFLUX_PASSWORD, INFLUX_DB (default pge)
+INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG (name or ID), INFLUX_BUCKET (default energy)
 POLL_INTERVAL (default 60s), FETCH_WINDOW (default 10m)
 ```
 

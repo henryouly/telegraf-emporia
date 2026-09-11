@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,7 +12,9 @@ import (
 
 	"github.com/henryouly/go-cognito-sdk/clients"
 	"github.com/henryouly/go-cognito-sdk/internal/config"
-	influx "github.com/influxdata/influxdb1-client/v2"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
 type CustomerResponse struct {
@@ -148,30 +151,19 @@ func signInIfRequired(old *TokenInfo, cfg *config.Config) TokenInfo {
 	return *old
 }
 
-func writeToInfluxDb(client influx.Client, database string, dataPoints []Datapoint) {
-	// Create a batch and write the point
-	batchPoints, err := influx.NewBatchPoints(influx.BatchPointsConfig{
-		Database:  database,
-		Precision: "s",
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func writeToInfluxDb(writeAPI api.WriteAPIBlocking, dataPoints []Datapoint) {
+	points := make([]*write.Point, 0, len(dataPoints))
 	for _, dp := range dataPoints {
-		tags := map[string]string{}
-		fields := map[string]interface{}{"value": dp.Value}
-		point, err := influx.NewPoint("datapoint", tags, fields, dp.Timestamp)
-		if err != nil {
-			log.Fatal(err)
-		}
-		batchPoints.AddPoint(point)
+		points = append(points, influxdb2.NewPoint("datapoint",
+			map[string]string{},
+			map[string]interface{}{"value": dp.Value},
+			dp.Timestamp))
 	}
 
-	if err := client.Write(batchPoints); err != nil {
+	if err := writeAPI.WritePoint(context.Background(), points...); err != nil {
 		log.Printf("Error writing data to InfluxDB: %v\n", err)
 	} else {
-		fmt.Printf("Data written to InfluxDB\n")
+		fmt.Printf("Wrote %d points to InfluxDB\n", len(points))
 	}
 }
 
@@ -181,15 +173,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client, err := influx.NewHTTPClient(influx.HTTPConfig{
-		Addr:     cfg.InfluxURL,
-		Username: cfg.InfluxUser,
-		Password: cfg.InfluxPass,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	client := influxdb2.NewClient(cfg.InfluxURL, cfg.InfluxToken)
 	defer client.Close()
+	writeAPI := client.WriteAPIBlocking(cfg.InfluxOrg, cfg.InfluxBucket)
 
 	httpClient := http.Client{
 		Timeout: time.Second * 10,
@@ -211,7 +197,7 @@ func main() {
 			log.Printf("Can't update: %v\n", err)
 			return
 		}
-		writeToInfluxDb(client, cfg.InfluxDB, dataPoints)
+		writeToInfluxDb(writeAPI, dataPoints)
 	}
 
 	fetchData()

@@ -14,10 +14,10 @@ type Config struct {
 	CognitoRegion   string
 	CognitoClientID string
 
-	InfluxURL  string
-	InfluxUser string
-	InfluxPass string
-	InfluxDB   string
+	InfluxURL    string
+	InfluxToken  string
+	InfluxOrg    string
+	InfluxBucket string
 
 	PollInterval time.Duration
 	FetchWindow  time.Duration
@@ -76,10 +76,10 @@ func Load() (*Config, error) {
 		CognitoRegion:   getenv("COGNITO_REGION", "us-east-2"),
 		CognitoClientID: os.Getenv("COGNITO_CLIENT_ID"),
 
-		InfluxURL:  getenv("INFLUX_URL", "http://192.168.30.3:8086"),
-		InfluxUser: os.Getenv("INFLUX_USER"),
-		InfluxPass: os.Getenv("INFLUX_PASSWORD"),
-		InfluxDB:   getenv("INFLUX_DB", "pge"),
+		InfluxURL:    getenv("INFLUX_URL", "http://192.168.30.20:8086"),
+		InfluxToken:  os.Getenv("INFLUX_TOKEN"),
+		InfluxOrg:    os.Getenv("INFLUX_ORG"),
+		InfluxBucket: getenv("INFLUX_BUCKET", "energy"),
 
 		PollInterval: getenvDuration("POLL_INTERVAL", time.Minute),
 		FetchWindow:  getenvDuration("FETCH_WINDOW", 10*time.Minute),
@@ -87,11 +87,11 @@ func Load() (*Config, error) {
 
 	var missing []string
 	for k, v := range map[string]string{
-		"EMPORIA_EMAIL":    cfg.EmporiaEmail,
-		"EMPORIA_PASSWORD": cfg.EmporiaPassword,
+		"EMPORIA_EMAIL":     cfg.EmporiaEmail,
+		"EMPORIA_PASSWORD":  cfg.EmporiaPassword,
 		"COGNITO_CLIENT_ID": cfg.CognitoClientID,
-		"INFLUX_USER":      cfg.InfluxUser,
-		"INFLUX_PASSWORD":  cfg.InfluxPass,
+		"INFLUX_TOKEN":      cfg.InfluxToken,
+		"INFLUX_ORG":        cfg.InfluxOrg,
 	} {
 		if v == "" {
 			missing = append(missing, k)

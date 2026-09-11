@@ -45,11 +45,12 @@ Poll helper `updateOneMinute` (`main.go:80-84`): `start = now-10m`, `interval = 
 
 > Note: channels `1,2,3` are requested combined; per-channel split is not parsed today.
 
-## 2. InfluxDB v1 schema
+## 2. InfluxDB v2 schema (migrated 2026-09-11; server is v2.8.0, not v1)
 
-### 2.1 Current (in `main.go:159-191`)
-- Client: `influx.NewHTTPClient({Addr, Username, Password})`, `NewBatchPoints({Database: pge, Precision: s})`.
-- Per point: `NewPoint("datapoint", tags={}, fields={"value": float64}, timestamp)`.
+### 2.1 Current (in `main.go`)
+- Client: `influxdb2.NewClient(url, token)`, `WriteAPIBlocking(org, bucket)` with
+  org `2e7a164e7e93aac5`, bucket `energy`.
+- Per point: measurement `datapoint`, no tags, field `value` (float kWh per 1s bucket).
 - Example line protocol: `datapoint value=0.001 1725753600`
 
 Limits: no tags → cannot filter by device/channel; measurement name generic.
@@ -65,9 +66,12 @@ Example:
 energy_usage,device_gid=12345,channel=combined kwh=0.001 1725753600
 ```
 
-Grafana:
-```sql
-SELECT mean("kwh") FROM "energy_usage" WHERE $timeFilter GROUP BY time(1m), "device_gid"
+Grafana (Flux):
+```flux
+from(bucket: "energy")
+  |> range(start: v.timeRangeStart)
+  |> filter(fn: (r) => r._measurement == "datapoint")
+  |> aggregateWindow(every: 1m, fn: mean)
 ```
 
 ### 2.3 Overlap / dedup
