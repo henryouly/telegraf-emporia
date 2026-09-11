@@ -1,7 +1,9 @@
 # Tech Stack
 
 ## 1. Language & runtime
-- **Go** — current `go.mod:3` pins `go 1.19`. Recommended bump to `1.22+` for `log/slog`, improved `net/http`, `os/signal` handling.
+- **Go** — `go.mod` pins `go 1.24.0` (toolchain auto-downloads via `GOTOOLCHAIN=auto`).
+  1.24 is required on macOS 26+: older toolchains (e.g. 1.22.3) emit binaries
+  that `dyld` rejects with `missing LC_UUID load command`.
 - Stdlib only for HTTP polling (`net/http` + `time.Ticker`), signal handling (`os/signal`), JSON (`encoding/json`).
 - Replace deprecated `ioutil.ReadAll` (`main.go:54,101`) with `io.ReadAll`.
 

@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/henryouly/go-cognito-sdk/clients"
@@ -152,6 +154,10 @@ func signInIfRequired(old *TokenInfo, cfg *config.Config) TokenInfo {
 }
 
 func writeToInfluxDb(writeAPI api.WriteAPIBlocking, dataPoints []Datapoint) {
+	if len(dataPoints) == 0 {
+		log.Println("No datapoints to write, skipping")
+		return
+	}
 	points := make([]*write.Point, 0, len(dataPoints))
 	for _, dp := range dataPoints {
 		points = append(points, influxdb2.NewPoint("datapoint",
@@ -218,6 +224,9 @@ func main() {
 	}()
 
 	fmt.Println("Daemon is running. Press Ctrl+C to stop.")
-	<-make(chan os.Signal, 1)
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	<-sigCh
+	fmt.Println("Shutting down...")
 	close(stop)
 }
