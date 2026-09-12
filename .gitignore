@@ -1,3 +1,4 @@
 .env
 energy_tracker
+dist/
 *.test

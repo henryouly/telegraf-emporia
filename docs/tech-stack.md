@@ -18,7 +18,7 @@ No ORM, no web framework. Keep binary single-static for NAS/RPi deployment.
 
 ## 3. External services (confirmed)
 - **Source:** Emporia Energy cloud — `https://api.emporiaenergy.com/customers/devices` + `https://api.emporiaenergy.com/AppAPI?apiMethod=getChartUsage`. Auth: Cognito `us-east-2`, header `authtoken: <IdToken>` (`main.go:37`).
-- **Sink:** InfluxDB v2.8.0 at `http://192.168.30.20:8086`, org `2e7a164e7e93aac5`, bucket `energy`, token auth. Blocking write per poll, precision `s`.
+- **Sink:** InfluxDB v2 (`energy` bucket, token auth; URL/org in deploy env, see `docs/telegraf.md`). Legacy daemon writes via blocking API per poll; production path is Telegraf `exec` → `influxdb_v2` output. Precision `s`.
 
 ## 4. Configuration (agreed: env vars + config file)
 No secrets in code. Precedence: `env > config.yaml > default`.

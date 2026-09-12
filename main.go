@@ -178,6 +178,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err := cfg.RequireInflux(); err != nil {
+		log.Fatal(err)
+	}
 
 	client := influxdb2.NewClient(cfg.InfluxURL, cfg.InfluxToken)
 	defer client.Close()

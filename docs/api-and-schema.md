@@ -47,13 +47,15 @@ Poll helper `updateOneMinute` (`main.go:80-84`): `start = now-10m`, `interval = 
 
 ## 2. InfluxDB v2 schema (migrated 2026-09-11; server is v2.8.0, not v1)
 
-### 2.1 Current (in `main.go`)
-- Client: `influxdb2.NewClient(url, token)`, `WriteAPIBlocking(org, bucket)` with
-  org `2e7a164e7e93aac5`, bucket `energy`.
-- Per point: measurement `datapoint`, no tags, field `value` (float kWh per 1s bucket).
-- Example line protocol: `datapoint value=0.001 1725753600`
+### 2.1 Current
+- Legacy daemon (`main.go`): `influxdb2.NewClient(url, token)`,
+  `WriteAPIBlocking(org, bucket)`; measurement `datapoint`, no tags,
+  field `value` (float kWh per 1s bucket).
+- Production path (`cmd/poll` via Telegraf `exec`): same measurement/field,
+  plus tag `device_gid`.
+- Example line protocol: `datapoint,device_gid=228759 value=0.001 1725753600000000000`
 
-Limits: no tags → cannot filter by device/channel; measurement name generic.
+Limits (legacy daemon path): no tags → cannot filter by device/channel; measurement name generic. The Telegraf path adds `device_gid`.
 
 ### 2.2 Proposed (backward-compatible path)
 - New measurement `energy_usage`, keep writing `datapoint` during migration if dashboards depend on it.

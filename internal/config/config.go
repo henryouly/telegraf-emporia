@@ -76,7 +76,7 @@ func Load() (*Config, error) {
 		CognitoRegion:   getenv("COGNITO_REGION", "us-east-2"),
 		CognitoClientID: os.Getenv("COGNITO_CLIENT_ID"),
 
-		InfluxURL:    getenv("INFLUX_URL", "http://192.168.30.20:8086"),
+		InfluxURL:    getenv("INFLUX_URL", "http://localhost:8086"),
 		InfluxToken:  os.Getenv("INFLUX_TOKEN"),
 		InfluxOrg:    os.Getenv("INFLUX_ORG"),
 		InfluxBucket: getenv("INFLUX_BUCKET", "energy"),
@@ -90,8 +90,6 @@ func Load() (*Config, error) {
 		"EMPORIA_EMAIL":     cfg.EmporiaEmail,
 		"EMPORIA_PASSWORD":  cfg.EmporiaPassword,
 		"COGNITO_CLIENT_ID": cfg.CognitoClientID,
-		"INFLUX_TOKEN":      cfg.InfluxToken,
-		"INFLUX_ORG":        cfg.InfluxOrg,
 	} {
 		if v == "" {
 			missing = append(missing, k)
@@ -101,4 +99,21 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("missing required env vars: %s (see .env.example)", strings.Join(missing, ", "))
 	}
 	return cfg, nil
+}
+
+// RequireInflux reports an error if InfluxDB settings are incomplete.
+// The Telegraf exec poller (cmd/poll) doesn't need it — Telegraf owns the
+// InfluxDB output — but the legacy daemon (main.go) still does.
+func (c *Config) RequireInflux() error {
+	var missing []string
+	if c.InfluxToken == "" {
+		missing = append(missing, "INFLUX_TOKEN")
+	}
+	if c.InfluxOrg == "" {
+		missing = append(missing, "INFLUX_ORG")
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("missing required env vars: %s (see .env.example)", strings.Join(missing, ", "))
+	}
+	return nil
 }

@@ -15,7 +15,7 @@ Current implementation in `main.go:193-247` does exactly this: immediate `fetchD
 
 ## 3. Non-goals (confirmed 2026-09-08)
 - Stay on Emporia Energy API (`api.emporiaenergy.com`). No new vendor.
-- Target is InfluxDB v2.8.0 at `192.168.30.20:8086` (`influxdb-client-go/v2`, token auth, `energy` bucket). Migrated from v1 on 2026-09-11 after discovering the server is v2.
+- Target is InfluxDB v2 (`energy` bucket, token auth; host details in deploy env, see `docs/telegraf.md`). Migrated from v1 client to v2, then from daemon writes to the Telegraf `exec` pipeline.
 - Single-user, single-home use. No multi-tenant, no device control, no billing.
 
 ## 4. Functional flow
